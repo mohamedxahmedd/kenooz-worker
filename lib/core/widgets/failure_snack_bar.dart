@@ -1,0 +1,36 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:kenooz_worker_app/core/theming/assets.dart';
+import 'package:kenooz_worker_app/core/theming/text_styles.dart';
+import 'package:kenooz_worker_app/core/widgets/custom_snack_bar.dart';
+
+import 'package:top_snackbar_flutter/top_snack_bar.dart';
+
+void failureSnackBar({required String msg, required BuildContext context}) =>
+    showTopSnackBar(
+      dismissType: DismissType.onSwipe,
+      displayDuration: const Duration(seconds: 1),
+      Overlay.of(context),
+      GlobalSnackBar.error(
+        messagePadding: EdgeInsets.symmetric(horizontal: 15.w),
+        textStyle: TextStyles.textStyle11.copyWith(
+          fontSize: 11.7,
+          color: Colors.white,
+          fontWeight: FontWeight.w600,
+        ),
+        maxLines: 2,
+        iconRotationAngle: 0,
+         icon: Padding(
+          padding: const EdgeInsets.only(right: 20.0),
+          child: Image.asset(
+            Assets.assetsImagesLogo,
+            color: Colors.white,
+            width: 100.w,
+            height: 100.h,
+            fit: BoxFit.contain,
+          ),
+        ),
+        gradient: const [Color(0xff6F001C), Color(0xffEF2828)],
+        message: msg,
+      ),
+    );

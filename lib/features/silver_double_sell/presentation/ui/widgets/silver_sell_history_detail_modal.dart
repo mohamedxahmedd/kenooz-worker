@@ -1,0 +1,537 @@
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:kenooz_worker_app/core/theming/app_fonts.dart';
+import 'package:kenooz_worker_app/core/theming/colors.dart';
+import 'package:kenooz_worker_app/features/silver_double_sell/data/models/silver_buy_history_model.dart';
+import 'package:kenooz_worker_app/features/silver_double_sell/data/models/silver_buy_item_history_model.dart';
+import 'package:kenooz_worker_app/features/silver_double_sell/data/models/silver_sell_history_model.dart';
+import 'package:kenooz_worker_app/features/invoice/presentation/ui/widgets/invoice_action_buttons.dart';
+import 'package:kenooz_worker_app/features/invoice/presentation/ui/widgets/invoice_type.dart';
+import 'package:kenooz_worker_app/features/silver_double_sell/data/models/silver_sell_item_history_model.dart';
+
+class SilverSellHistoryDetailModal extends StatelessWidget {
+  final SilverSellHistoryModel sell;
+  const SilverSellHistoryDetailModal({super.key, required this.sell});
+
+  static void show(BuildContext context, SilverSellHistoryModel sell) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (_) => SilverSellHistoryDetailModal(sell: sell),
+    );
+  }
+
+  static const Color _accentColor = Color(0xFF9E9E9E);
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 24.h),
+      child: Container(
+        width: double.infinity,
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(context).height * 0.85,
+        ),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkThemeContainerColor : Colors.white,
+          borderRadius: BorderRadius.circular(20.r),
+          border: Border.all(
+            color: isDark
+                ? Colors.white.withOpacity(0.08)
+                : AppColors.primaryColor.withOpacity(0.14),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.4 : 0.12),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // ── Header ──────────────────────────────────────────────
+            Padding(
+              padding: EdgeInsets.fromLTRB(20.w, 18.h, 12.w, 12.h),
+              child: Row(
+                children: [
+                  Container(
+                    width: 36.w,
+                    height: 36.w,
+                    decoration: BoxDecoration(
+                      color: _accentColor.withOpacity(0.14),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.auto_awesome_rounded,
+                        color: _accentColor, size: 18.sp),
+                  ),
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'silver_double_sell.title'.tr(),
+                          style: AppFonts.heading(
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w700,
+                            color: isDark
+                                ? AppColors.lightTextColorForDarkMood
+                                : AppColors.darkBrown,
+                          ),
+                        ),
+                        Text(
+                          '${sell.client.name} · #${sell.id}',
+                          style: AppFonts.body(
+                            fontSize: 12.sp,
+                            color: isDark
+                                ? AppColors.textGreyColor
+                                : AppColors.darkGreyTextColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  InvoiceActionButtons(
+                    type: InvoiceType.silver,
+                    id: sell.id,
+                    accentColor: _accentColor,
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: Icon(Icons.close_rounded,
+                        size: 22.sp,
+                        color: isDark
+                            ? AppColors.textGreyColor
+                            : AppColors.darkGreyTextColor),
+                  ),
+                ],
+              ),
+            ),
+
+            // ── Summary chips ────────────────────────────────────────
+            Padding(
+              padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 12.h),
+              child: Row(
+                children: [
+                  _SummaryChip(
+                    icon: Icons.calendar_today_rounded,
+                    label: sell.sellDate,
+                    accentColor: _accentColor,
+                    isDark: isDark,
+                  ),
+                  SizedBox(width: 8.w),
+                  _SummaryChip(
+                    icon: Icons.monetization_on_rounded,
+                    label:
+                        '${sell.total.toStringAsFixed(2)} ${'common.egp'.tr()}',
+                    accentColor: _accentColor,
+                    isDark: isDark,
+                  ),
+                  SizedBox(width: 8.w),
+                  _SummaryChip(
+                    icon: Icons.person_outline_rounded,
+                    label: sell.worker.name,
+                    accentColor: _accentColor,
+                    isDark: isDark,
+                  ),
+                ],
+              ),
+            ),
+
+            Divider(
+              height: 1,
+              color: isDark
+                  ? Colors.white.withOpacity(0.06)
+                  : AppColors.primaryColor.withOpacity(0.12),
+            ),
+
+            // ── Scrollable content ───────────────────────────────────
+            Flexible(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.all(16.w),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Sell Items
+                    _SectionHeader(
+                      title: 'common.sellItemsSection'.tr(),
+                      count: sell.silverSellItems.length,
+                      isDark: isDark,
+                      accentColor: _accentColor,
+                    ),
+                    SizedBox(height: 10.h),
+                    if (sell.silverSellItems.isEmpty)
+                      _EmptySection(isDark: isDark)
+                    else
+                      _SilverSellItemsTable(
+                          items: sell.silverSellItems, isDark: isDark),
+
+                    // Buy Items (if double sell)
+                    if (sell.hasBuy) ...[
+                      SizedBox(height: 20.h),
+                      _SectionHeader(
+                        title: 'common.buyItemsSection'.tr(),
+                        count: sell.silverBuys
+                            .fold(0, (s, b) => s + b.items.length),
+                        isDark: isDark,
+                        accentColor: AppColors.darkBrown,
+                      ),
+                      SizedBox(height: 10.h),
+                      ...sell.silverBuys.map(
+                          (buy) => _SilverBuySection(buy: buy, isDark: isDark)),
+                    ],
+
+                    SizedBox(height: 8.h),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Silver Sell Items Table ──────────────────────────────────────────────────
+
+class _SilverSellItemsTable extends StatelessWidget {
+  final List<SilverSellItemHistoryModel> items;
+  final bool isDark;
+  const _SilverSellItemsTable({required this.items, required this.isDark});
+
+  String _typeLabel(SilverSellItemType t) {
+    switch (t) {
+      case SilverSellItemType.inside:
+        return 'common.inside'.tr();
+      case SilverSellItemType.box:
+        return 'common.box'.tr();
+      case SilverSellItemType.outside:
+        return 'common.outside'.tr();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: DataTable(
+        headingRowHeight: 36.h,
+        dataRowMinHeight: 40.h,
+        dataRowMaxHeight: 48.h,
+        columnSpacing: 18.w,
+        horizontalMargin: 12.w,
+        headingTextStyle: AppFonts.body(
+          fontSize: 11.sp,
+          fontWeight: FontWeight.w700,
+          color: isDark
+              ? AppColors.lightTextColorForDarkMood
+              : AppColors.darkBrown,
+        ),
+        dataTextStyle: AppFonts.body(
+          fontSize: 11.sp,
+          color: isDark ? AppColors.textGreyColor : AppColors.darkGreyTextColor,
+        ),
+        decoration: BoxDecoration(
+          color: isDark
+              ? AppColors.darkThemeContainerColorElevated
+              : AppColors.backGroundColorLight,
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(
+            color: isDark
+                ? Colors.white.withOpacity(0.06)
+                : AppColors.primaryColor.withOpacity(0.1),
+          ),
+        ),
+        columns: [
+          DataColumn(label: Text('#')),
+          DataColumn(label: Text('common.type'.tr())),
+          DataColumn(label: Text('common.carat'.tr())),
+          DataColumn(label: Text('common.kind'.tr())),
+          DataColumn(label: Text('common.vendor'.tr())),
+          DataColumn(label: Text('common.grams'.tr())),
+          DataColumn(label: Text('common.loss'.tr())),
+          DataColumn(label: Text('common.mc'.tr())),
+          DataColumn(label: Text('common.profit'.tr())),
+          DataColumn(label: Text('common.gramPrice'.tr())),
+          DataColumn(label: Text('common.total'.tr())),
+        ],
+        rows: items.asMap().entries.map((e) {
+          final i = e.key;
+          final item = e.value;
+          return DataRow(
+            color: WidgetStateProperty.resolveWith((states) => i.isOdd
+                ? (isDark
+                    ? Colors.white.withOpacity(0.03)
+                    : AppColors.primaryColor.withOpacity(0.03))
+                : null),
+            cells: [
+              DataCell(Text('${i + 1}')),
+              DataCell(Text(_typeLabel(item.itemType))),
+              DataCell(Text(item.caratLabel)),
+              DataCell(Text(item.kindName)),
+              DataCell(Text(item.vendorName)),
+              DataCell(Text(item.grams.toStringAsFixed(3))),
+              DataCell(Text(
+                  item.loss != null ? item.loss!.toStringAsFixed(3) : '-')),
+              DataCell(Text(item.mc.toStringAsFixed(2))),
+              DataCell(Text(item.profit.toStringAsFixed(2))),
+              DataCell(Text(item.gramPrice.toStringAsFixed(2))),
+              DataCell(Text(
+                item.price.toStringAsFixed(2),
+                style: AppFonts.body(
+                  fontSize: 11.sp,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF9E9E9E),
+                ),
+              )),
+            ],
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+// ── Silver Buy Section ───────────────────────────────────────────────────────
+
+class _SilverBuySection extends StatelessWidget {
+  final SilverBuyHistoryModel buy;
+  final bool isDark;
+  const _SilverBuySection({required this.buy, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              'Buy #${buy.id}',
+              style: AppFonts.body(
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w600,
+                color: isDark
+                    ? AppColors.lightTextColorForDarkMood
+                    : AppColors.darkBrown,
+              ),
+            ),
+            SizedBox(width: 8.w),
+            Text(
+              '${buy.total.toStringAsFixed(2)} ${'common.egp'.tr()}',
+              style: AppFonts.body(
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF9E9E9E),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 8.h),
+        _SilverBuyItemsTable(items: buy.items, isDark: isDark),
+        SizedBox(height: 10.h),
+      ],
+    );
+  }
+}
+
+class _SilverBuyItemsTable extends StatelessWidget {
+  final List<SilverBuyItemHistoryModel> items;
+  final bool isDark;
+  const _SilverBuyItemsTable({required this.items, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: DataTable(
+        headingRowHeight: 36.h,
+        dataRowMinHeight: 40.h,
+        dataRowMaxHeight: 48.h,
+        columnSpacing: 18.w,
+        horizontalMargin: 12.w,
+        headingTextStyle: AppFonts.body(
+          fontSize: 11.sp,
+          fontWeight: FontWeight.w700,
+          color: isDark
+              ? AppColors.lightTextColorForDarkMood
+              : AppColors.darkBrown,
+        ),
+        dataTextStyle: AppFonts.body(
+          fontSize: 11.sp,
+          color: isDark ? AppColors.textGreyColor : AppColors.darkGreyTextColor,
+        ),
+        decoration: BoxDecoration(
+          color: isDark
+              ? AppColors.darkThemeContainerColorElevated
+              : AppColors.backGroundColorLight,
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(
+            color: isDark
+                ? Colors.white.withOpacity(0.06)
+                : AppColors.primaryColor.withOpacity(0.1),
+          ),
+        ),
+        columns: [
+          DataColumn(label: Text('#')),
+          DataColumn(label: Text('common.carat'.tr())),
+          DataColumn(label: Text('common.box'.tr())),
+          DataColumn(label: Text('common.grams'.tr())),
+          DataColumn(label: Text('common.loss'.tr())),
+          DataColumn(label: Text('common.netGrams'.tr())),
+          DataColumn(label: Text('common.gramPrice'.tr())),
+          DataColumn(label: Text('common.total'.tr())),
+        ],
+        rows: items.asMap().entries.map((e) {
+          final i = e.key;
+          final item = e.value;
+          return DataRow(
+            color: WidgetStateProperty.resolveWith((states) => i.isOdd
+                ? (isDark
+                    ? Colors.white.withOpacity(0.03)
+                    : AppColors.primaryColor.withOpacity(0.03))
+                : null),
+            cells: [
+              DataCell(Text('${i + 1}')),
+              DataCell(Text(item.caratLabel)),
+              DataCell(Text(item.boxName ?? '-')),
+              DataCell(Text(item.grams.toStringAsFixed(3))),
+              DataCell(Text(item.loss.toStringAsFixed(3))),
+              DataCell(Text(item.netGrams.toStringAsFixed(3))),
+              DataCell(Text(item.gramPrice.toStringAsFixed(2))),
+              DataCell(Text(
+                item.price.toStringAsFixed(2),
+                style: AppFonts.body(
+                  fontSize: 11.sp,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF9E9E9E),
+                ),
+              )),
+            ],
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+// ── Shared sub-widgets ───────────────────────────────────────────────────────
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  final int count;
+  final bool isDark;
+  final Color accentColor;
+  const _SectionHeader(
+      {required this.title,
+      required this.count,
+      required this.isDark,
+      required this.accentColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Text(
+          title,
+          style: AppFonts.heading(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w700,
+            color: isDark
+                ? AppColors.lightTextColorForDarkMood
+                : AppColors.darkBrown,
+          ),
+        ),
+        SizedBox(width: 8.w),
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+          decoration: BoxDecoration(
+            color: accentColor.withOpacity(0.12),
+            borderRadius: BorderRadius.circular(8.r),
+          ),
+          child: Text(
+            '$count',
+            style: AppFonts.body(
+              fontSize: 11.sp,
+              fontWeight: FontWeight.w700,
+              color: accentColor,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SummaryChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isDark;
+  final Color accentColor;
+  const _SummaryChip(
+      {required this.icon,
+      required this.label,
+      required this.isDark,
+      required this.accentColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return Flexible(
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+        decoration: BoxDecoration(
+          color: accentColor.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(8.r),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 11.sp, color: accentColor),
+            SizedBox(width: 4.w),
+            Flexible(
+              child: Text(
+                label,
+                style: AppFonts.body(
+                  fontSize: 10.sp,
+                  fontWeight: FontWeight.w500,
+                  color: accentColor,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptySection extends StatelessWidget {
+  final bool isDark;
+  const _EmptySection({required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: 16.h),
+        child: Text(
+          'common.noItemsAdded'.tr(),
+          style: AppFonts.body(
+            fontSize: 13.sp,
+            color:
+                isDark ? AppColors.textGreyColor : AppColors.darkGreyTextColor,
+          ),
+        ),
+      ),
+    );
+  }
+}

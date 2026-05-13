@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Flutter Web (Chrome)",
+      "runtimeExecutable": "/Users/hossamxstudios/E/flutter/flutter/bin/flutter",
+      "runtimeArgs": ["run", "-d", "chrome", "--web-port", "8080"],
+      "port": 8080
+    },
+    {
+      "name": "Flutter iOS Simulator",
+      "runtimeExecutable": "/Users/hossamxstudios/E/flutter/flutter/bin/flutter",
+      "runtimeArgs": ["run", "-d", "iphone"],
+      "port": 0
+    },
+    {
+      "name": "Flutter macOS Desktop",
+      "runtimeExecutable": "/Users/hossamxstudios/E/flutter/flutter/bin/flutter",
+      "runtimeArgs": ["run", "-d", "macos"],
+      "port": 0
+    }
+  ]
+}
